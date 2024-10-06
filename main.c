@@ -1,50 +1,73 @@
 #include <stdio.h>
+#include <string.h>
 #include <math.h>
 
-// money will be calculated in cents as an int
+// Monetary values will be stored in long ints as 1/1,000ths of a cent 
+// for the sake of resolution when calculating exponents,
+// so 1 dollar as an integer is 100,000.
+const long CENTS    = 1000;
+const long DOLLARS  = 100000;
 
-int readVariables(fd);
+typedef enum
+{
+    MODE_C, MODE_A, MODE_FA, MODE_FC
+} MODE;
+
+typedef struct
+{
+    long    A;      // total amount of money
+    long    P;      // principle amount in dollars
+    long    c;      // first contribution amount
+    double  r;      // return rate (1.00 = no change)
+    double  i;      // inflation rate (1.00 = no change)
+    int     t;      // amount of time in market in years 
+    int     n;      // number of times a year to contribute to fund 
+    MODE    mode;   // which mode the program will be calculating
+} icif;
+
+void Icif(icif *x);
 
 int main(void)
 {
-    int A = 0;          // total amount
-    double P = 0.0;     // principle amount in dollars
-    double c = 0.0;     // first contribution amount
-    double r = 0.0;     // nominal return rate as a percent
-    double i = 0.0;     // inflation rate as a percent
-    int t = 0;          // ammount of time in market in years 
-    int n = 0;          // number of times a year to contribute to fund 
+    // A temporary variable will be made with test numbers until future implementations
+    icif x = {.A = 8000000*DOLLARS, .P = 0, .r = 1.08, .i = 1.03, .t = 40, .n = 24, .mode = MODE_C};
 
 
-    // Retreiving information from user
-    printf("How many years will you be investing in the market? Please Enter an integer: ");
-    scanf("%d", &period);
-    printf("How many times will you invest in a year? Please Enter an integer: ");
-    scanf("%d", &interval);
-    printf("How much money have you already invested? Please Enter a value: ");
-    scanf("%lf", &principle);
-    printf("How much money do you plan to invest at each interval? Please Enter a value: ");
-    scanf("%lf", &contribution);
-    printf("What is the average inflation rate? Please Enter a value: ");
-    scanf("%lf", &inflation);
-    printf("What is your average annual return rate? Please Enter a value: ");
-    scanf("%lf", &interest);
+    // Loading args into variables
 
-    // Interest on first interval of principle
-    total = principle*pow(interest, (double)1.0/interval);
+    // If there are missing variables, ask them from console.
+    // If A is given but not c, assume MODE_C. If c and not A, assume MODE_A
+        // If both, ask which MODE if not given yet
+        // If neither, ask for one or the other, then assume which MODE.
 
-    for (int i = 1; i < period*interval; i++)
-    {
-        total = (contribution*pow(inflation, (double)i/interval)) + (total*pow(interest, (double)1.0/interval)); 
-    }
+    Icif(&x);
+    printf("$%.2lf\n", (float)x.c/DOLLARS);
 
-    printf("$%lf\n", total);
 
     return 0;
 }
 
-int readVariables(fd)
-{
 
-    return;
+// This function does the fast calculations for A or c depending on the mode, which will be displayed
+void Icif(icif *x)
+{
+    // Preliminary calculation to make final equation more readable
+    double ri = x->r - x->i;
+    double rt = pow(x->r, (double)x->t);
+    double it = pow(x->i, (double)x->t);
+    double rn = pow(x->r, (double)x->n);
+    double in = pow(x->i, (double)x->n);
+
+    // The bulk (telescoping) part of the equation
+    double coeff = (((rt - it)/ri) * ((rn - in)/ri));
+
+    switch (x->mode)
+    {
+        case MODE_C:        x->c = (long)(x->A / coeff);    break;
+        case MODE_A:        x->A = (long)(x->c * coeff);    break;
+        case MODE_FAST:     x->A = (long)(x->c * coeff);    break;
+        default: printf("error: unknown mode of calculation.\n");
+    }
+
+    // TODO: print the results into text file after the final format has been decided
 }

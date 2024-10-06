@@ -13,12 +13,34 @@ where:
 - t = The duration of the investment term in years
 - n = The number of times a contribution will be made per year
 
-If you also want to include a principle investment, P, you can add to the end of the previous formula:   $P\cdot r^{\left(n+1\right)}$
+If you also want to include a principle investment, P, you can add to the end of the previous formula:   $P⋅r^{(n+\frac{1}{t})}$ (assuming your principle was invested one period before the contributions begin).
 
-Program Features:
-- takes in and outputs all information through a .txt file
+## The Program
+Features:
+- takes in and outputs all information through a text file
 - can calculate a final investment value givne a starting contribution
 - can extrapolate an initial investment value given a final investment goal
+
+Modes: 
+1. Uses $A$ to find $c$, and the intermediate $c$ values for every period will be calculated
+    - Whatever value is stored in $c$ before the calculation will be overwritten.
+2. Uses $c$ to find $A$, and the intermediate $c$ values for every period will be calculated
+    - Whatever value is stored in $A$ before the calculation will be overwritten.
+3. Uses $A$ to find $c$, the intermediate values will not be calculated.
+    - Whatever value is stored in $c$ before the calculation will be overwritten.
+4. Uses $c$ to find $A$, the intermediate values will not be calculated.
+    - Whatever value is stored in $A$ before the calculation will be overwritten.
+
+At the top of the text file, the following will be printed:
+- The arguments of the investment equation.
+- The final value of the investment fund ($A$).
+- The first contribution amount ($c$).
+
+The text file will then print a table with the following for every period:
+- The period.
+- The amount needed to contribute for that period.
+- The running total of all contributions made up until that point.
+- The running total of the entire investment fund including compound interest.
 
 Limitations:
 - This program does not allow the changing of the interest or inflation rates over time.
@@ -28,7 +50,7 @@ Future Features:
 - converts the nominal value of investments into its real value
 - will also track an upper bound and lower bound interest rate, as well as an upper and lower bound inflation rate.
 - factors changes in the interest rate over time (to simulate protfolio rebalancing).
-
+- will use XML format instead of a text file
 
 
 ## Deriving the Formula
