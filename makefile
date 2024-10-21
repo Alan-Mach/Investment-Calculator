@@ -2,12 +2,13 @@ SRC = main.c
 OBJ = $(SRC:.c=.o)
 EXE = $(SRC:.c=.e)
 	
-CFLAGS = -g -lm
+CFLAGS = -g
+LINKER = -lm
 	
 all : $(EXE)
 	
 $(EXE) : $(OBJ)
-	gcc  $(OBJ) -o  $(EXE)
+	gcc  $(OBJ) -o  $(EXE)  $(LINKER)
 	
- $(OBJ) :  $(SRC)
+$(OBJ) :  $(SRC)
 	gcc -c  $(CFLAGS)  $(SRC)

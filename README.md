@@ -51,6 +51,7 @@ Future Features:
 - will also track an upper bound and lower bound interest rate, as well as an upper and lower bound inflation rate.
 - factors changes in the interest rate over time (to simulate protfolio rebalancing).
 - will use XML format instead of a text file
+- Monte Carlo simulations to test the possible ending fund values
 
 
 ## Deriving the Formula
@@ -69,36 +70,30 @@ This time, $t$ increases because the later contributions are made, the more infl
 
 Putting the two summations together, you get: $\sum_{n=0}^{t}\left(c\cdot r^{\left(t-n\right)}i^{\left(n\right)}\right)$.
 When the summation is expanded adn the coefficient is factored, you get:
-$$
-c\left(r^{n}i^{0}+r^{\left(n-1\right)}i^{1}+r^{\left(n-2\right)}i^{2}+...+r^{2}i^{\left(n-2\right)}+r^{1}i^{\left(n-1\right)}+r^{0}i^{n}\right)
-$$
+$c\left(r^{n}i^{0}+r^{\left(n-1\right)}i^{1}+r^{\left(n-2\right)}i^{2}+...+r^{2}i^{\left(n-2\right)}+r^{1}i^{\left(n-1\right)}+r^{0}i^{n}\right)$
 This pattern of increasing and decreasing polynomials already exists. It's called a <ins>Telescoping Series</ins>:
 
 The fun thing about this series is that if you multiply the entire series by $(x-y)$, it collapses into a very brief expression:
-$$
-\left(x^{n}-y^{n}\right)=\left(x-y\right)\left(x^{n}y^{0}+x^{\left(n-1\right)}y^{1}+x^{\left(n-2\right)}y^{2}+...+x^{2}y^{\left(n-2\right)}+x^{1}y^{\left(n-1\right)}+x^{0}y^{n}\right)
-$$
+$\left(x^{n}-y^{n}\right)=\left(x-y\right)\left(x^{n}y^{0}+x^{\left(n-1\right)}y^{1}+x^{\left(n-2\right)}y^{2}+...+x^{2}y^{\left(n-2\right)}+x^{1}y^{\left(n-1\right)}+x^{0}y^{n}\right)$
 
 Working the other way, the series can be represented as: $\left(\frac{x^{n}-y^{n}}{x-y}\right)$
 
 If you plug back in our variables and contribution, you get:
-$$
-A=c\left(\frac{r^{t}-i^{t}}{r-i}\right)
-$$
+$$A=c\left(\frac{r^{t}-i^{t}}{r-i}\right)$$
 
 And if you move things around, you can make an equaiton which extrapolates $c$ when given $A$:
-$$\Large
+$\Large
 c=\frac{A}{\left(\frac{r^{t}-i^{t}}{r-i}\right)}
-$$
+$
 
 However, using this formula only gives the contribution amount for an entire year. What if you wanted to contribute multiple times a year? Simple. You can just treat $c$ as $A$ and rerun the previous equation. The only difference is that you won't be using $t$ (the number of years), you would be using $n$ (the number of contributions per year).
-$$\Large
+$\Large
 c_{n}=\frac{c_{t}}{\left(\frac{r^{n}-i^{n}}{r-i}\right)}
-$$
+$
 
 When we substitute the latter equation into the former, we get:
-$$\Large
+$\Large
 c=\frac{A}{\left(\frac{r^{t}-i^{t}}{r-i}\right)\left(\frac{r^{n}-i^{n}}{r-i}\right)}
-$$
+$
 
 This formula finds the amount of the very first contribution given a final target for an investment fund, and switching things around would get the equaiton at the top.
