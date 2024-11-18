@@ -12,3 +12,7 @@ $(EXE) : $(OBJ)
 	
 $(OBJ) :  $(SRC)
 	gcc -c  $(CFLAGS)  $(SRC)
+
+.PHONY: clean
+clean:
+	rm -f $(OBJ) $(EXE)

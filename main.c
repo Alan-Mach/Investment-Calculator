@@ -55,8 +55,11 @@ typedef struct
 
 // This function loads all command line arguments into their respective struct members,
 // regardless of their order in the command line. 
-void getArgs(char *argv[], icif *x)
+void getArgs(int argc, char *argv[], icif *x)
 {
+    if (argc == 1)
+        return;
+
     for (int i = 1; argv[i] != NULL; i++)
 	{
 		if (*argv[i] == 'm')
@@ -95,8 +98,11 @@ int matchMODE(char mode[])
 A function that asks for icif function variables from the console for any 
 variables that has a value of 0 (except P).
 
-0 is assumed to indicate that teh user still hasn't made a choice on 
+0 is assumed to indicate that the user still hasn't made a choice on 
 which value to give.
+
+This function should be used after getArgs() to get the rest of the 
+necessary values not given as args.
 */
 void askVars(icif *x)
 {
@@ -193,8 +199,13 @@ void ICstep(icif *x)
 
 int main(int argc, char *argv[])
 {
+
     // A temporary variable will be made with test numbers until future implementations
-    icif x = {.A = 8000000*DOLLARS, .P = 0, .r = 1.08, .i = 1.03, .t = 40, .n = 24, .mode = 1};
+    //icif x = {.A = 8000000*DOLLARS, .P = 0, .r = 1.08, .i = 1.03, .t = 40, .n = 24, .mode = 1};
+    icif x = {.mode = 0, .A = 0*DOLLARS, .P = 0, .r = 0, .i = 0, .t = 0, .n = 0};
+
+    getArgs(argc, argv, &x);
+    askVars(&x);
 
 
     // Loading args into variables
@@ -205,7 +216,7 @@ int main(int argc, char *argv[])
         // If neither, ask for one or the other, then assume which MODE.
 
     Icif(&x);
-    printf("$%.2lf\n", (float)x.c/DOLLARS);
+    printf("$%.2lf\n", (double)x.c/DOLLARS);
 
 
     return 0;

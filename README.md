@@ -15,6 +15,17 @@ where:
 
 If you also want to include a principle investment, P, you can add to the end of the previous formula:   $P⋅r^{(n+\frac{1}{t})}$ (assuming your principle was invested one period before the contributions begin).
 
+## Running the Program
+Making the executable: 
+- run the command `make`
+
+If you want to run without args:
+- enter `./main`
+
+If you want to run with args:
+- use the format `./main `
+
+
 ## The Program
 Features:
 - takes in and outputs all information through a text file
