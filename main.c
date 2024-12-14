@@ -19,12 +19,13 @@ typedef enum
 {
     MODE_cT = 1, MODE_AT, MODE_c, MODE_A
 } MODE;
+static const int NUM_MODES = 4;
 
 /*
 This struct array is auxillary to the MODE enum. Since enums are only 
 recognized when they are source code, using scanf() will not see an 
-enum as a string. This allows an enum string to be associated with
-and enum value outside of source code. 
+enum as a string. This will allow an enum string to be associated with
+and enum value outside of the source code. 
 */
 typedef struct MODE_
 {
@@ -53,8 +54,33 @@ typedef struct
 } icif;
 
 
-// This function loads all command line arguments into their respective struct members,
-// regardless of their order in the command line. 
+// A function that matches the struct MODE_ value to the enum mode
+int matchMODE(char mode[])
+{
+    /* TODO: handling if integers are passed instead of the mode name
+    int modeVal = atoi(mode);
+    if (modeval)
+    */
+
+    for (int i = 0; i < NUM_MODES; i++)
+    {
+        if (!strcmp(mode, Mode[i].mode))
+            return Mode[i].val;
+    }
+
+    return 0;
+}
+
+/*
+This function loads all command line arguments into their respective struct members,
+regardless of their order in the command line. People are stupid, so you can't trust
+them to enter them in the right order.
+
+getArgs() does not care what mode it is when getting the rest of the values, since 
+the mode may come after A or c in the command line. For example, if you entered a c 
+value when the mode is MODE_c, getArgs() will still get the value. It will just be 
+overwritten when the actual icif calculations are done.
+*/
 void getArgs(int argc, char *argv[], icif *x)
 {
     if (argc == 1)
@@ -63,35 +89,37 @@ void getArgs(int argc, char *argv[], icif *x)
     for (int i = 1; argv[i] != NULL; i++)
 	{
 		if (*argv[i] == 'm')
-            sscanf(strchr(argv[i],'=')+1, "%d", &(x->mode));    // store arg value into struct variable
-        else if (*argv[i] == 'A' && (x->mode == MODE_cT || x->mode == MODE_c))
+            sscanf(strchr(argv[i],'=')+1, "%d", &(x->mode));    // right now command line only accepts integer modes and not the name
+        else if (*argv[i] == 'A')
+        {
             sscanf(strchr(argv[i],'=')+1, "%ld", &(x->A));
+            x->A = x->A*DOLLARS;
+        }
         else if (*argv[i] == 'P')
+        {
             sscanf(strchr(argv[i],'=')+1, "%ld", &(x->P));
-        else if (*argv[i] == 'c' && (x->mode == MODE_AT || x->mode == MODE_A))
+            x->P = x->P*DOLLARS;
+        }
+        else if (*argv[i] == 'c')
+        {
             sscanf(strchr(argv[i],'=')+1, "%ld", &(x->c));
+            x->c = x->c*DOLLARS;
+        }
         else if (*argv[i] == 'r')
+        {
             sscanf(strchr(argv[i],'=')+1, "%lf", &(x->r));
+            x->r = 1 + (x->r/100);
+        }
         else if (*argv[i] == 'i')
+        {
             sscanf(strchr(argv[i],'=')+1, "%lf", &(x->i));
+            x->i = 1 + (x->i/100);
+        }
         else if (*argv[i] == 't')
             sscanf(strchr(argv[i],'=')+1, "%d", &(x->t));
         else if (*argv[i] == 'n')
             sscanf(strchr(argv[i],'=')+1, "%d", &(x->n)); 
 	}
-}
-
-// A function that matches the struct MODE_ value to the enum mode
-int matchMODE(char mode[])
-{
-    int enumSize = sizeof(Mode) / sizeof(MODE_);
-    for (int i = 0; i < enumSize; i++)
-    {
-        if (!strcmp(mode, Mode[i].mode));
-            return Mode[i].val;
-    }
-
-    return 0;
 }
 
 /*
@@ -106,59 +134,67 @@ necessary values not given as args.
 */
 void askVars(icif *x)
 {
+    // Mode has to be confirmed first so that the program knows which 
+    // variables it needs and which it doesn't need to ask for.
     while (!x->mode)
     {
-        printf("Please enter the mode of calculation.\n");
+        printf("\nPlease enter the mode of calculation.\n");
         printf("It can either be MODE_cT, MODE_AT, MODE_c, MODE_A.\n");
         char tempMode[8] = {};
         scanf("%s", tempMode);
         x->mode = matchMODE(tempMode);
     }
-    if (x->mode == MODE_cT || x->mode == MODE_c)
+    if ((x->mode == MODE_cT) || (x->mode == MODE_c))
     {
         while (!x->A)
         {
-            printf("Please enter the target investment amount in dollars (without the $ sign or commas).\n");
-            int tempA = 0;
-            scanf("%d", &tempA);
-            x->A = (long)tempA*DOLLARS;
+            printf("\nPlease enter the target investment amount in dollars (without the $ sign, commas, or decimals).\n");
+            scanf("%ld", &(x->A));
+            x->A = x->A*DOLLARS;
         }
     }
     // P will be skipped since 0 is a valid value
-    if (x->mode == MODE_AT || x->mode == MODE_A)
+    else if (x->mode == MODE_AT || x->mode == MODE_A)
     {
         while (!x->c)
         {
-            printf("Please enter the inital contribution amount in dollars (without the $ sign or commas).\n");
-            int tempc = 0;
-            scanf("%d", &tempc);
-            x->c = (long)tempc*DOLLARS;
+            printf("\nPlease enter the inital contribution amount in dollars (without the $ sign, commas, or decimals).\n");
+            scanf("%ld", &(x->c));
+            x->c = x->c*DOLLARS;
         }
     }
-    while (!x->r)
+    /*
+    (r - i) cannot =0 or else the formula will be undefined.
+    Must ask for both vars at the same time to make sure their
+    difference is not 0.
+
+    Due to that, if only r or i was given as command line args
+    and not the other, askVars() will not ask for the other as 
+    it is assumed you intended for the other to be 0.
+    */
+    while (!(x->r - x->i))
     {
-        printf("Please enter the rate at which your investments will increase as a percentage (without the %% sign).\n");
+        printf("\nPlease enter the rate at which your investments will increase as a percentage (without the %% sign).\n");
         printf("0.0 means 0%% change, <0.0 means decreasing, and >0.0 means increasing.\n");
-        double tempr = 0.0;
-        scanf("%lf", &tempr);
-        x->r = 1 + (tempr/100);
-    }
-    while (!x->i)
-    {
-        printf("Please enter the rate of inflation as a percentage (without the %% sign).\n");
+        scanf("%lf", &(x->r));
+        x->r = 1 + ((x->r)/100);
+
+        printf("\nPlease enter the rate of inflation as a percentage (without the %% sign).\n");
         printf("0.0 means 0%% change, <0.0 means decreasing, and >0.0 means increasing.\n");
-        double tempi = 0.0;
-        scanf("%lf", &tempi);
-        x->i = 1 + (tempi/100);
+        scanf("%lf", &(x->i));
+        x->i = 1 + ((x->i)/100);
+
+        if (!(x->r - x->i))
+            printf("\nr - i cannot = 0. Please give different values.\n");
     }
-    while (!x->t)
+    while (x->t <= 0)   // negative numbers not allowed here
     {
-        printf("Please enter the number of years you will be investing.\n");
+        printf("\nPlease enter the number of years you will be investing.\n");
         scanf("%d", &(x->t));
     }
-    while (!x->n)
+    while (x->n <= 0)   // negative numbers not allowed here
     {
-        printf("Please enter the number of times a year you will contribute to the fund.\n");
+        printf("\nPlease enter the number of times a year you will contribute to the fund.\n");
         scanf("%d", &(x->n));
     }
 }
@@ -167,14 +203,14 @@ void askVars(icif *x)
 void Icif(icif *x)
 {
     // Preliminary calculation to make final equation more readable
-    double ri = x->r - x->i;
-    double rt = pow(x->r, (double)x->t);
-    double it = pow(x->i, (double)x->t);
-    double rn = pow(x->r, (double)x->n);
-    double in = pow(x->i, (double)x->n);
+    double rn =         pow(x->r, 1.0/(double)x->n);
+    double in =         pow(x->i, 1.0/(double)x->n);
+    double rn_nt =      pow(rn, (double)(x->n * x->t + 1));
+    double last_term =  pow(in, (double)(x->n * x->t));
+    double in_nt =      last_term * in;
 
-    // The bulk (telescoping) part of the equation
-    double coeff = (((rt - it)/ri) * ((rn - in)/ri));
+    // The bulk part of the calculation
+    double coeff = ((rn_nt - in_nt)/(rn - in) - last_term);
 
     // Doing the last part of the equation depending on which value is needed
     switch (x->mode)
@@ -201,22 +237,35 @@ int main(int argc, char *argv[])
 {
 
     // A temporary variable will be made with test numbers until future implementations
-    //icif x = {.A = 8000000*DOLLARS, .P = 0, .r = 1.08, .i = 1.03, .t = 40, .n = 24, .mode = 1};
+    //icif x = {.A = 8000000*DOLLARS, .P = 0, .r = 1.08, .i = 1.03, .t = 40, .n = 12, .mode = 1};
     icif x = {.mode = 0, .A = 0*DOLLARS, .P = 0, .r = 0, .i = 0, .t = 0, .n = 0};
 
+    printf("%d\n", argc);
     getArgs(argc, argv, &x);
+
+    printf("\n");
+    printf("Mode: %d\n", x.mode);
+    printf("A: $%.2lf\n", (double)x.A/DOLLARS);
+    printf("P: $%.2lf\n", (double)x.P/DOLLARS);
+    printf("c: $%.2lf\n", (double)x.c/DOLLARS);
+    printf("r: %.2lf%%\n", (x.r-1)*100);
+    printf("i: %.2lf%%\n", (x.i-1)*100);
+    printf("t: %d\n", x.t);
+    printf("n: %d\n", x.n);
+
     askVars(&x);
 
-
-    // Loading args into variables
-
-    // If there are missing variables, ask them from console.
-    // If A is given but not c, assume MODE_C. If c and not A, assume MODE_A
-        // If both, ask which MODE if not given yet
-        // If neither, ask for one or the other, then assume which MODE.
-
     Icif(&x);
-    printf("$%.2lf\n", (double)x.c/DOLLARS);
+
+    printf("\n");
+    printf("Mode: %d\n", x.mode);
+    printf("A: $%.2lf\n", (double)x.A/DOLLARS);
+    printf("P: $%.2lf\n", (double)x.P/DOLLARS);
+    printf("c: $%.2lf\n", (double)x.c/DOLLARS);
+    printf("r: %.2lf%%\n", (x.r-1)*100);
+    printf("i: %.2lf%%\n", (x.i-1)*100);
+    printf("t: %d\n", x.t);
+    printf("n: %d\n", x.n);
 
 
     return 0;
