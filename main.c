@@ -2,9 +2,11 @@
 #include <string.h>
 #include <math.h>
 
-// Monetary values will be stored in long ints as 1/1,000ths of a cent 
-// for the sake of resolution when calculating exponents,
-// so 1 dollar as an integer is 100,000.
+/*
+Monetary values will be stored in long ints as 1/1,000ths of a cent for 
+the sake of resolution when calculating exponents, so 1 dollar as an 
+integer is 100,000.
+*/
 static const long CENTS    = 1000;
 static const long DOLLARS  = 100000;
 
@@ -25,7 +27,7 @@ static const int NUM_MODES = 4;
 This struct array is auxillary to the MODE enum. Since enums are only 
 recognized when they are source code, using scanf() will not see an 
 enum as a string. This will allow an enum string to be associated with
-and enum value outside of the source code. 
+an enum value outside of the source code. 
 */
 typedef struct MODE_
 {
@@ -47,8 +49,8 @@ typedef struct
     long    A;      // total amount of money
     long    P;      // principle amount in dollars
     long    c;      // first contribution amount
-    double  r;      // return rate (1.00 = no change)
-    double  i;      // inflation rate (1.00 = no change)
+    double  r;      // return rate (0.00 = no change)
+    double  i;      // inflation rate (0.00 = no change)
     int     t;      // amount of time in market in years 
     int     n;      // number of times a year to contribute to fund 
 } icif;
@@ -57,7 +59,7 @@ typedef struct
 // A function that matches the struct MODE_ value to the enum mode
 int matchMODE(char mode[])
 {
-    /* TODO: handling if integers are passed instead of the mode name
+    /* TODO: handle when integers are passed instead of the mode name
     int modeVal = atoi(mode);
     if (modeval)
     */
@@ -73,12 +75,11 @@ int matchMODE(char mode[])
 
 /*
 This function loads all command line arguments into their respective struct members,
-regardless of their order in the command line. People are stupid, so you can't trust
-them to enter them in the right order.
+regardless of their order in the command line.
 
 getArgs() does not care what mode it is when getting the rest of the values, since 
 the mode may come after A or c in the command line. For example, if you entered a c 
-value when the mode is MODE_c, getArgs() will still get the value. It will just be 
+value when the mode is MODE_c, getArgs() will still get that value. It will just be 
 overwritten when the actual icif calculations are done.
 */
 void getArgs(int argc, char *argv[], icif *x)
@@ -89,7 +90,7 @@ void getArgs(int argc, char *argv[], icif *x)
     for (int i = 1; argv[i] != NULL; i++)
 	{
 		if (*argv[i] == 'm')
-            sscanf(strchr(argv[i],'=')+1, "%d", &(x->mode));    // right now command line only accepts integer modes and not the name
+            sscanf(strchr(argv[i],'=')+1, "%d", &(x->mode));    // TODO: read mode name and not its enum value
         else if (*argv[i] == 'A')
         {
             sscanf(strchr(argv[i],'=')+1, "%ld", &(x->A));
@@ -108,12 +109,12 @@ void getArgs(int argc, char *argv[], icif *x)
         else if (*argv[i] == 'r')
         {
             sscanf(strchr(argv[i],'=')+1, "%lf", &(x->r));
-            x->r = 1 + (x->r/100);
+            x->r = x->r/100;
         }
         else if (*argv[i] == 'i')
         {
             sscanf(strchr(argv[i],'=')+1, "%lf", &(x->i));
-            x->i = 1 + (x->i/100);
+            x->i = x->i/100;
         }
         else if (*argv[i] == 't')
             sscanf(strchr(argv[i],'=')+1, "%d", &(x->t));
@@ -177,12 +178,12 @@ void askVars(icif *x)
         printf("\nPlease enter the rate at which your investments will increase as a percentage (without the %% sign).\n");
         printf("0.0 means 0%% change, <0.0 means decreasing, and >0.0 means increasing.\n");
         scanf("%lf", &(x->r));
-        x->r = 1 + ((x->r)/100);
+        x->r = (x->r)/100;
 
         printf("\nPlease enter the rate of inflation as a percentage (without the %% sign).\n");
         printf("0.0 means 0%% change, <0.0 means decreasing, and >0.0 means increasing.\n");
         scanf("%lf", &(x->i));
-        x->i = 1 + ((x->i)/100);
+        x->i = (x->i)/100;
 
         if (!(x->r - x->i))
             printf("\nr - i cannot = 0. Please give different values.\n");
@@ -199,18 +200,18 @@ void askVars(icif *x)
     }
 }
 
-// This function does the fast calculations for A or c depending on the mode, which will be displayed
+// This function does the fast calculations for A or c depending on the mode, which will be displayed to the console
 void Icif(icif *x)
 {
     // Preliminary calculation to make final equation more readable
-    double rn =         pow(x->r, 1.0/(double)x->n);
-    double in =         pow(x->i, 1.0/(double)x->n);
+    double rn =         1 + (x->r/x->n);
+    double in =         1 + (x->i/x->n);
     double rn_nt =      pow(rn, (double)(x->n * x->t + 1));
     double last_term =  pow(in, (double)(x->n * x->t));
     double in_nt =      last_term * in;
 
     // The bulk part of the calculation
-    double coeff = ((rn_nt - in_nt)/(rn - in) - last_term);
+    double coeff = (((rn_nt - in_nt)/(rn - in)) - last_term);
 
     // Doing the last part of the equation depending on which value is needed
     switch (x->mode)
@@ -222,51 +223,69 @@ void Icif(icif *x)
         default: printf("error: unknown mode of calculation.\n");
     }
 
-    // TODO: print the results into text file after the final format has been decided
+    // TODO: handle the calculations when there is a P value.
 }
 
 /*
-This function does a single incremental step to inflate the given contribution amount
-*/
-void ICstep(icif *x)
-{
+This function loops to find the contribution amount for every term and tabulates it to a .csv file.
 
+It is assumed that Icif() has already been executed before this function.
+*/
+void IcifTabulate(icif *x)
+{
+    FILE *fp = fopen("icif.csv", "w");
+    if (fp == NULL)
+    {
+        printf("\nCould not make icif.csv file. Not tabulating :(\n");
+        return;
+    }
+
+    // Table headers
+    fprintf(fp, "Year-Period,Contribution Amount,Total Contributions,Total Value\n");
+
+    double rn = 1+(x->r/x->n);
+    double in = 1+(x->i/x->n);
+
+    // totalCont's value represents the total contributions at the beginning of a period, whereas 
+    // totalValue's value represents the value at the end of a period when interest has been gained.
+    long contribution = x->c;
+    long totalCont = x->c;
+    long totalValue = x->c * rn;
+
+    fprintf(fp, "1-1,%.2lf,%.2lf,%.2lf\n", (double)contribution/DOLLARS, (double)totalCont/DOLLARS, (double)totalValue/DOLLARS);  // First row
+
+    for (int i = 1; i < (x->n*x->t); i++)
+    {
+        contribution = (long)(contribution * in);
+        totalCont += contribution;
+        totalValue = (long)((totalValue + contribution) * rn);
+
+        fprintf(fp, "%d-%d,%.2lf,%.2lf,%.2lf\n", (i/x->n)+1, (i%x->n)+1, (double)contribution/DOLLARS, (double)totalCont/DOLLARS, (double)totalValue/DOLLARS);
+    }
+
+    fclose(fp);
 }
 
 int main(int argc, char *argv[])
 {
-
-    // A temporary variable will be made with test numbers until future implementations
-    //icif x = {.A = 8000000*DOLLARS, .P = 0, .r = 1.08, .i = 1.03, .t = 40, .n = 12, .mode = 1};
     icif x = {.mode = 0, .A = 0*DOLLARS, .P = 0, .r = 0, .i = 0, .t = 0, .n = 0};
 
-    printf("%d\n", argc);
     getArgs(argc, argv, &x);
-
-    printf("\n");
-    printf("Mode: %d\n", x.mode);
-    printf("A: $%.2lf\n", (double)x.A/DOLLARS);
-    printf("P: $%.2lf\n", (double)x.P/DOLLARS);
-    printf("c: $%.2lf\n", (double)x.c/DOLLARS);
-    printf("r: %.2lf%%\n", (x.r-1)*100);
-    printf("i: %.2lf%%\n", (x.i-1)*100);
-    printf("t: %d\n", x.t);
-    printf("n: %d\n", x.n);
-
     askVars(&x);
 
     Icif(&x);
+    if ((x.mode == MODE_cT) || (x.mode == MODE_AT))
+        IcifTabulate(&x);
 
     printf("\n");
     printf("Mode: %d\n", x.mode);
     printf("A: $%.2lf\n", (double)x.A/DOLLARS);
     printf("P: $%.2lf\n", (double)x.P/DOLLARS);
     printf("c: $%.2lf\n", (double)x.c/DOLLARS);
-    printf("r: %.2lf%%\n", (x.r-1)*100);
-    printf("i: %.2lf%%\n", (x.i-1)*100);
+    printf("r: %.2lf%%\n", x.r*100);
+    printf("i: %.2lf%%\n", x.i*100);
     printf("t: %d\n", x.t);
     printf("n: %d\n", x.n);
-
 
     return 0;
 }

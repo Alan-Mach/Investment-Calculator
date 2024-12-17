@@ -1,4 +1,5 @@
 SRC = main.c
+OUT = icif.csv
 OBJ = $(SRC:.c=.o)
 EXE = $(SRC:.c=.e)
 	
@@ -15,4 +16,4 @@ $(OBJ) :  $(SRC)
 
 .PHONY: clean
 clean:
-	rm -f $(OBJ) $(EXE)
+	rm -f $(OBJ) $(EXE) $(OUT)
