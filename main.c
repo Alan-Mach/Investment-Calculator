@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include <math.h>
 
 /*
@@ -57,13 +58,15 @@ typedef struct
 
 
 // A function that matches the struct MODE_ value to the enum mode
+// Returns 0 if fails.
 int matchMODE(char mode[])
 {
-    /* TODO: handle when integers are passed instead of the mode name
-    int modeVal = atoi(mode);
-    if (modeval)
-    */
+    // Handling if an integer mode is input
+    int x = strtol(mode, NULL, 10);
+    if (x > 0 && x < NUM_MODES)
+        return x;
 
+    // Handling if a mode were input as a string
     for (int i = 0; i < NUM_MODES; i++)
     {
         if (!strcmp(mode, Mode[i].mode))
@@ -90,7 +93,7 @@ void getArgs(int argc, char *argv[], icif *x)
     for (int i = 1; argv[i] != NULL; i++)
 	{
 		if (*argv[i] == 'm')
-            sscanf(strchr(argv[i],'=')+1, "%d", &(x->mode));    // TODO: read mode name and not its enum value
+            x->mode = matchMODE(strchr(argv[i],'=')+1);
         else if (*argv[i] == 'A')
         {
             sscanf(strchr(argv[i],'=')+1, "%ld", &(x->A));

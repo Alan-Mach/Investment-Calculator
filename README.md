@@ -3,8 +3,8 @@ Most investment calculators on the internet let you choose a single amount you a
 
 This is where the <ins>Inflating Contributions Investment Formula (ICIF)</ins> comes in. It calculates what your portfolio would be worth when the amount you are contributing into a fund slowly increases. This could be used to account for inflation, or it could be used to represent how a salary progression allows you to invest more as time progresses.
 
-This formula is:\
-$$A=c\left(\frac{\left(\left(1+\frac{r}{n}\right)^{\left(nt+1\right)}-\left(1+\frac{i}{n}\right)^{\left(nt+1\right)}\right)}{\left(1+\frac{r}{n}\right)-\left(1+\frac{i}{n}\right)}-\left(1+\frac{i}{n}\right)^{nt}\right)$$
+This formula is: \
+$$A=c\left(\frac{\left(\left(1+\frac{r}{n}\right)^{\left(nt+1\right)}-\left(1+\frac{i}{n}\right)^{\left(nt+1\right)}\right)}{\left(1+\frac{r}{n}\right)-\left(1+\frac{i}{n}\right)}-\left(1+\frac{i}{n}\right)^{nt}\right)$$ \
 where:
 - A = The total amount of money at the end of the investment term
 - c = The amount of the very first contribution in dollars
@@ -25,16 +25,17 @@ If you want to run with args:
 - use the format `./main.e mode=1 A=1000 c=1000 r=1 i=1 t=1 n=1`, replacing the example values with your own
     - Do not put spaces where there aren't any in the format. The only spaces are to separate variables apart.
     - Do not put commas, $, or % signs with any values
-    - For now, the mode value is represented as a number and not the name (as seen below)
+    - The mode value can be represented as the mode's name (e.g. mode=MODE_cT) or as its associated value (e.g. mode=1).
     - The variables can be in different orders, but `./main.e` must be first.
+    - Not all values need to be provided. If any are missing, the program will ask for the rest in the console.
 
 Running:
-- If you entered any args, the program will read those first..
+- If you entered any args, the program will read those first.
 - Then, it will ask for any missing variables it needs. It will continuously ask until a valid value is given. Simply enter your desired value into the console and press enter (be sure to follow the directions printed on the screen).
     - First it will ask for the mode, since that determines which value you want to calculate and whether you want to tabulate the results (refer to "Modes" below).
     - If you make a mistake, you cannot undo the value you put in unless the value you entered was not valid. You can just rerun the program again if necessary.
-- Then it will ask for the rest of the necessary values from the formula above and calculate the value according to your selected mode.
-- If you choose to tabulate your investment values, then you will also find an output file named icif.csv that contains all the data. 
+        - To forcefully terminate the program midway, enter Ctrl+C or Command+C at any point.
+- If you choose to tabulate your investment values, then you will also find an output file named `icif.csv` that contains all the data. 
     - You can then import that file into most spreadsheet software. You may have to format the units to dollars. 
 
 Cleaning:
@@ -59,7 +60,7 @@ Modes:
     - Whatever value is stored in $A$ before the calculation will be overwritten.
 
 For the tabulated modes (`MODE_cT` and `MODE_AT`), the .csv file will record the following numbers for each period:
-- The period.
+- The year and period/sub-annual term.
 - The amount needed to contribute for that period.
 - The running total of all contributions made up until that point.
 - The running total of the entire investment fund including compound interest.
@@ -67,8 +68,9 @@ For the tabulated modes (`MODE_cT` and `MODE_AT`), the .csv file will record the
 Limitations:
 - This program does not allow the changing of the interest or inflation rates over time; there is only one return rate for the entire investment term.
 - Expense Ratios are not accounted for in the formula. However, if you are investing into mutual funds or ETFs, they should already be factored into the expected return rates.
-- This program does not extrapolate what r or i may be when provides the rest of the variables. You must provide these values yourself
+- This program does not extrapolate what r or i may be when provides the rest of the variables. You must provide these values yourself.
 - Due to the computer's rounding errors, the values in the last rows of the .csv file may be slightly different from the value printed to the console.
+    - This should not matter significantly, as the volatility of the market far outweighs the inaccuracy of this program.
 
 Future Features:
 - Will allow the function variables to also be read through an input file instead of in the command line or scanf().
